@@ -10,7 +10,8 @@ on:
 
 jobs:
   build_run_test:
-    runs-on: robot-dind # Test new self-hosted runner
+    runs-on: 
+      group: robot-dind # Test new self-hosted runner
     permissions:
       contents: read
       packages: write
