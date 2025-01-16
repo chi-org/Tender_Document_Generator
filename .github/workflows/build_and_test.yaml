@@ -12,7 +12,6 @@ jobs:
   build_run_test:
     runs-on: 
       group: robot-dind # Test new self-hosted runner
-      labels: robot-dind
     permissions:
       contents: read
       packages: write
