@@ -10,7 +10,7 @@ on:
 
 jobs:
   build_run_test:
-    runs-on: arc-runner-set # Test new self-hosted runner
+    runs-on: robot-dind # Test new self-hosted runner
     permissions:
       contents: read
       packages: write
