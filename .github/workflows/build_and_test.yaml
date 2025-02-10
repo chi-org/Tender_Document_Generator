@@ -128,7 +128,7 @@ jobs:
       - name: Checkout charts 
         uses: actions/checkout@v4
         with:
-          repository: 'charts'
+          repository: '${{ github.repository_owner }}/charts'
       
       - name: test
         run: ls
