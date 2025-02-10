@@ -134,13 +134,16 @@ jobs:
         run: |
           sed -i '/^  repository: svtechnmaa\/tender_document_generator/{N;s/  tag: .*/  tag: '"${{ env.IMAGE_TAG }}"'/}' kubernetes/docxtemplate/values.yaml
 
-          git config user.name "svtechnmaa"
-          git config user.email "nmaa@svtech.com.vn"
+          git config user.name "$GIT_USER_NAME"
+          git config user.email "$GIT_USER_EMAIL"
 
           git add .
           git commit -m "no-ci: Update docxtemplate image version"
 
           git push origin main
+        env:
+          GIT_USER_NAME: "linhchi"
+          GIT_USER_EMAIL: "phamtranlinhchi02@gmail.com"
 
 
       # - name: Update image version in helm chart
