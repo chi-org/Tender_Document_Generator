@@ -12,7 +12,7 @@ Library  Process
 
 *** Variables ***
 #${URL}             http://10.98.12.25:8503/docxtemplate
-${URL}             http://127.0.0.1:8504/docxtemplate
+${URL}             http://127.0.0.1:8503/docxtemplate
 ${BROWSER}         headlesschrome
 
 *** Test Cases ***
