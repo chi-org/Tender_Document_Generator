@@ -129,7 +129,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: '${{ github.repository_owner }}/charts'
-          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Update image version in helm chart 
         run: |
