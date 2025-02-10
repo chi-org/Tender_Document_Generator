@@ -55,8 +55,8 @@ jobs:
 
     - name: Push image to GitHub Container Registry
       run: |
-        docker tag tender-docxtemplate-app:latest ghcr.io/${{ env.REPO }}:${{ env.imageTag }}
-        docker push ghcr.io/${{ env.REPO }}:${{ env.imageTag }}
+        docker tag tender-docxtemplate-app:latest ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }}
+        docker push ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }}
 
   test: 
     needs: build
@@ -81,7 +81,7 @@ jobs:
           
       - name: Pull image from GitHub Container Registry
         run: |
-          docker pull ghcr.io/${{ env.REPO }}:${{ env.imageTag }}
+          docker pull ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }}
 
       - id: run_and_check_container_status
         name: Run Tender app
@@ -109,7 +109,7 @@ jobs:
           echo "Robot test failed, deleting package from GHCR..."
           REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
           echo "Repo name: $REPO_NAME"
-          VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" | jq -r '.[] | select(.metadata.container.tags[] == "${{ env.imageTag }}") | .id')
+          VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" | jq -r '.[] | select(.metadata.container.tags[] == "${{ env.IMAGE_TAG }}") | .id')
           echo "Package version ID: $VERSION_ID"
           curl -i -X DELETE -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
         
@@ -122,7 +122,7 @@ jobs:
 
       - name: Push latest image to GitHub Container Registry
         run: |
-          docker tag ghcr.io/${{ env.REPO }}:${{ env.imageTag }} ghcr.io/${{ env.REPO }}:latest
+          docker tag ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }} ghcr.io/${{ env.REPO }}:latest
           docker push ghcr.io/${{ env.REPO }}:latest
 
       - name: Update image version in helm chart
@@ -134,7 +134,7 @@ jobs:
           # git config --global user.email "nmaa@svtech.com.vn"
           # git clone -b feature/streamlit https://github.com/svtechnmaa/charts.git --depth=1 --single-branch
           # cd charts/
-          # sed -i '/^  repository: svtechnmaa\/tender_document_generator/{N;s/  tag: .*/  tag: '"${{ env.imageTag }}"'/}' kubernetes/docxtemplate/values.yaml
+          # sed -i '/^  repository: svtechnmaa\/tender_document_generator/{N;s/  tag: .*/  tag: '"${{ env.IMAGE_TAG }}"'/}' kubernetes/docxtemplate/values.yaml
           # git add .
           # git commit -m "no-ci: Update docxtemplate image version"
           # git remote set-url origin https://svtechnmaa:${{ secrets.GITHUB_TOKEN }}@github.com/svtechnmaa/charts.git
