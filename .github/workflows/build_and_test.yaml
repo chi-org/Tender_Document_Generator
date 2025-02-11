@@ -156,7 +156,7 @@ jobs:
       - name: Checkout stacked-charts 
         uses: actions/checkout@v4
         with:
-          repository: '${{ github.repository_owner }}/stacked-charts'
+          repository: '${{ github.repository_owner }}/stacked_charts'
           token: ${{ secrets.PUSH_TOKEN }}
       
       - name: Update image version in helm chart 
