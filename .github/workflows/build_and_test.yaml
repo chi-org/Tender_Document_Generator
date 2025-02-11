@@ -174,10 +174,10 @@ jobs:
           path: SVTECH_CI_utilities
           ref: dev-jenkins
 
-      # - name: Setup Python
-      #   uses: actions/setup-python@v5.3.0
-      #   with:
-      #     python-version: "3.13"
+      - name: Setup Python
+        uses: actions/setup-python@v5.3.0
+        with:
+          python-version: "3.13"
       
       - name: Update image version in helm chart 
         run: |
