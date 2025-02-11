@@ -139,7 +139,7 @@ jobs:
           git config user.email "${{ env.GIT_USER_EMAIL }}"
 
           git add .
-          git commit -m "no-ci: Update docxtemplate image version"
+          git commit -m "no-ci: Update docxtemplate image version to ${{ env.IMAGE_TAG }}"
 
           git log --oneline --graph --decorate --abbrev-commit
 
@@ -147,6 +147,30 @@ jobs:
         env:
           GIT_USER_NAME: "linhchi"
           GIT_USER_EMAIL: "phamtranlinhchi02@gmail.com"
+
+      - name: Checkout stacked-charts 
+        uses: actions/checkout@v4
+        with:
+          repository: '${{ github.repository_owner }}/stacked-charts'
+          token: ${{ secrets.PUSH_TOKEN }}
+      
+      - name: Update image version in helm chart 
+        run: |
+          sed -i '/^    repository: svtechnmaa\/tender_document_generator/{N;s/    tag: .*/    tag: '"${{ env.IMAGE_TAG }}"'/}' $BUILD_VARS_PATH/$BUILD_ID/stacked_charts/kubernetes/internal_apps/docxtemplate/values.yaml
+
+          git config user.name "${{ env.GIT_USER_NAME }}"
+          git config user.email "${{ env.GIT_USER_EMAIL }}"
+
+          git add .
+          git commit -m "no-ci: Update docxtemplate image version to ${{ env.IMAGE_TAG }}"
+
+          git log --oneline --graph --decorate --abbrev-commit
+
+          git push origin main
+        env:
+          GIT_USER_NAME: "linhchi"
+          GIT_USER_EMAIL: "phamtranlinhchi02@gmail.com"
+
 
 
       # - name: Update image version in helm chart
