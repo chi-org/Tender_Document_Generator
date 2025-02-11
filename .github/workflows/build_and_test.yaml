@@ -62,7 +62,7 @@ jobs:
     # needs: build
     runs-on: robot-dind
     permissions:
-      contents: write
+      contents: read
       packages: write
     steps:
       - name: Checkout code
