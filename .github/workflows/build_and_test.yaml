@@ -130,10 +130,15 @@ jobs:
         with:
           repository: '${{ github.repository_owner }}/charts'
           token: ${{ secrets.PUSH_TOKEN }}
+
+      - name: Helm tool installer
+        uses: Azure/setup-helm@v3
       
       - name: Update image version in helm chart 
         run: |
           sed -i '/^  repository: svtechnmaa\/tender_document_generator/{N;s/  tag: .*/  tag: '"${{ env.IMAGE_TAG }}"'/}' kubernetes/docxtemplate/values.yaml
+          
+          helm repo index ./charts/artifacthub
 
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
