@@ -141,6 +141,8 @@ jobs:
           git add .
           git commit -m "no-ci: Update docxtemplate image version"
 
+          git log --oneline --graph --decorate --abbrev-commit
+
           git push origin main
         env:
           GIT_USER_NAME: "linhchi"
