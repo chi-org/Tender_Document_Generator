@@ -136,10 +136,9 @@ jobs:
       
       - name: Update image version in helm chart 
         run: |
-          ls
           sed -i '/^  repository: svtechnmaa\/tender_document_generator/{N;s/  tag: .*/  tag: '"${{ env.IMAGE_TAG }}"'/}' kubernetes/docxtemplate/values.yaml
-          ls
-          helm repo index charts/artifacthub
+          
+          helm repo index artifacthub
 
           git config user.name "${{ env.GIT_USER_NAME }}"
           git config user.email "${{ env.GIT_USER_EMAIL }}"
