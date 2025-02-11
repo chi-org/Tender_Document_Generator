@@ -179,6 +179,7 @@ jobs:
       
       - name: Update image version in helm chart 
         run: |
+          pip install requests pyyaml
           python3 ./SVTECH_CI_utilities/auto_testing/python_script/public_helmchart_release.py --BUILD_VARS_PATH="." --ID="." --GITHUB_TOKEN=${{ secrets.PUSH_TOKEN }} --OWNER=svtechnmaa --charts_string=docxtemplate --REPO=charts
           ls
           cd stacked_charts
