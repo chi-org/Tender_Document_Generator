@@ -176,7 +176,7 @@ jobs:
         uses: cycjimmy/semantic-release-action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # test feat fix
+      # test feat fix heheheh
 
       # - name: Checkout charts 
       #   uses: actions/checkout@v4
