@@ -164,11 +164,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If permission denied for protected branch, use ${{ secrets.PUSH_TOKEN }} instead.
       
+      - name: No release published
+        if: ${{ !steps.semantic.outputs.new_release_published }}
+        run: |
+          echo "No release published, skipping the rest of the job..."
+
       - name: Downcase REPO
+        if: steps.semantic.outputs.new_release_published
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
       - name: Login to GitHub Container Registry
+        if: steps.semantic.outputs.new_release_published
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -176,18 +183,9 @@ jobs:
           password: '${{ secrets.GITHUB_TOKEN }}'
 
       - name: Pull image from GitHub Container Registry
+        if: steps.semantic.outputs.new_release_published
         run: |
           docker pull ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }}
-
-      - name: Push latest image to GitHub Container Registry
-        run: |
-          docker tag ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }} ghcr.io/${{ env.REPO }}:${{ env.RELEASE_IMAGE_TAG }}
-          docker tag ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }} ghcr.io/${{ env.REPO }}:latest
-
-          docker push ghcr.io/${{ env.REPO }}:${{ env.RELEASE_IMAGE_TAG }}
-          docker push ghcr.io/${{ env.REPO }}:latest
-        env: 
-          RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
 
       - name: Delete package from GHCR after successful release
         if: steps.semantic.outputs.new_release_published
@@ -200,8 +198,20 @@ jobs:
           curl -i -X DELETE -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
         env: 
           RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
+      
+      - name: Push latest released image to GitHub Container Registry
+        if: steps.semantic.outputs.new_release_published
+        run: |
+          docker tag ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }} ghcr.io/${{ env.REPO }}:${{ env.RELEASE_IMAGE_TAG }}
+          docker tag ghcr.io/${{ env.REPO }}:${{ env.IMAGE_TAG }} ghcr.io/${{ env.REPO }}:latest
+
+          docker push ghcr.io/${{ env.REPO }}:${{ env.RELEASE_IMAGE_TAG }}
+          docker push ghcr.io/${{ env.REPO }}:latest
+        env: 
+          RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
 
       - name: Checkout charts 
+        if: steps.semantic.outputs.new_release_published
         uses: actions/checkout@v4
         with:
           repository: '${{ github.repository_owner }}/charts'
@@ -210,6 +220,7 @@ jobs:
           ref: main
 
       - name: Checkout stacked_charts 
+        if: steps.semantic.outputs.new_release_published
         uses: actions/checkout@v4
         with:
           repository: '${{ github.repository_owner }}/stacked_charts'
@@ -218,6 +229,7 @@ jobs:
           ref: master
       
       - name: Checkout SVTECH_CI_utilities 
+        if: steps.semantic.outputs.new_release_published
         uses: actions/checkout@v4
         with:
           repository: '${{ github.repository_owner }}/SVTECH_CI_utilities'
@@ -225,15 +237,18 @@ jobs:
           path: SVTECH_CI_utilities
           ref: dev-jenkins
 
-      # - name: Helm tool installer
-      #   uses: Azure/setup-helm@v3
+      - name: Helm tool installer
+        if: steps.semantic.outputs.new_release_published
+        uses: Azure/setup-helm@v3
       
       - name: Setup Python
+        if: steps.semantic.outputs.new_release_published
         uses: actions/setup-python@v5.3.0
         with:
           python-version: "3.13"
 
       # - name: Import GPG key
+      #   if: steps.semantic.outputs.new_release_published
       #   uses: crazy-max/ghaction-import-gpg@v6.2.0
       #   with:
       #     # GPG private key exported as an ASCII armored version or its base64 encoding
