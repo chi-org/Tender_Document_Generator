@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       image_tag: 
-        description: 'Image tag (default is v<latest_run_number>)'
+        description: 'Image tag (default is test-v<latest_run_number>)'
         type: string
       # image_name:
       #   description: 'Image name'
