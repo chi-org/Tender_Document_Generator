@@ -187,7 +187,7 @@ jobs:
           docker push ghcr.io/${{ env.REPO }}:${{ env.RELEASE_IMAGE_TAG }}
           docker push ghcr.io/${{ env.REPO }}:latest
         env: 
-          RELEASE_IMAGE_TAG: ${{ steps.semantic.outputs.new_release_version }}
+          RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
 
       - name: Delete package from GHCR after successful release
         if: steps.semantic.outputs.new_release_published
@@ -199,7 +199,7 @@ jobs:
           echo "Package version ID: $VERSION_ID"
           curl -i -X DELETE -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
         env: 
-          RELEASE_IMAGE_TAG: ${{ steps.semantic.outputs.new_release_version }}
+          RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
 
       - name: Checkout charts 
         uses: actions/checkout@v4
@@ -228,10 +228,10 @@ jobs:
       # - name: Helm tool installer
       #   uses: Azure/setup-helm@v3
       
-      # - name: Setup Python
-      #   uses: actions/setup-python@v5.3.0
-      #   with:
-      #     python-version: "3.13"
+      - name: Setup Python
+        uses: actions/setup-python@v5.3.0
+        with:
+          python-version: "3.13"
 
       # - name: Import GPG key
       #   uses: crazy-max/ghaction-import-gpg@v6.2.0
@@ -245,7 +245,7 @@ jobs:
           cd charts
           sed -i '/^  repository: svtechnmaa\/tender_document_generator/{N;s/  tag: .*/  tag: '"${{ env.RELEASE_IMAGE_TAG }}"'/}' kubernetes/docxtemplate/values.yaml
         env:
-          RELEASE_IMAGE_TAG: ${{ steps.semantic.outputs.new_release_version }}
+          RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
         
       - name: Update image version in stacked_charts 
         if: steps.semantic.outputs.new_release_published
@@ -271,7 +271,7 @@ jobs:
         env:
           GIT_USER_NAME: "svtechnmaa"
           GIT_USER_EMAIL: "nmaa@svtech.com.vn"
-          RELEASE_IMAGE_TAG: ${{ steps.semantic.outputs.new_release_version }}
+          RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
         
       - name: Update image version in charts 
         if: steps.semantic.outputs.new_release_published
@@ -294,4 +294,4 @@ jobs:
         env:
           GIT_USER_NAME: "svtechnmaa"
           GIT_USER_EMAIL: "nmaa@svtech.com.vn"
-          RELEASE_IMAGE_TAG: ${{ steps.semantic.outputs.new_release_version }}
+          RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
