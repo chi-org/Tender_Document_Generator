@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       image_tag: 
-        description: 'Image tag (default is v<latest_run_number>)'
+        description: 'Image tag (default is test-v<latest_run_number>)'
         type: string
       # image_name:
       #   description: 'Image name'
@@ -41,14 +41,14 @@ on:
         type: boolean
       
 env:
-  IMAGE_TAG: ${{ inputs.image_tag && inputs.image_tag || format('v{0}', github.run_number) }}
+  IMAGE_TAG: ${{ inputs.image_tag && inputs.image_tag || format('test-v{0}', github.run_number) }}
   IMAGE_NAME: 'tender-docxtemplate-app'
   CONTAINER_NAME: 'tender-docxtemplate-app'
   CONTAINER_MAPPING_PORT: '8503:8503'
 
 jobs:  
   build:
-    if: github.event_name == 'push' || github.event_name == 'pull_request' || inputs.run_build
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || (inputs.run_build && !(inputs.image_tag matches 'v[0-9]+\\.[0-9]+\\.[0-9]+'))
     runs-on: ubuntu-dind
     permissions:
       contents: read
@@ -150,6 +150,7 @@ jobs:
 
 
   release:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     needs: test
     runs-on: ubuntu-dind
     steps:
