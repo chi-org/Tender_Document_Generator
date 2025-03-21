@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       image_tag: 
-        description: 'Image tag (default: test-v<latest_run_number>). Note: Image "latest" or "vxx.xx.xx" cannot be rebuilt or deleted.'
+        description: 'Image tag (default: test-v<latest_run_number>). "latest" or "vxx.xx.xx" image cannot be rebuilt or deleted.'
         type: string
       # image_name:
       #   description: 'Image name'
