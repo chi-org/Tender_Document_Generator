@@ -150,13 +150,17 @@ jobs:
       - name: Delete package from GHCR if test fails
         if: failure() && !inputs.keep_image 
         run: |
-          echo "Robot test failed, deleting package from GHCR..."
-          REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
-          echo "Repo name: $REPO_NAME"
-          VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" | jq -r '.[] | select(.metadata.container.tags[] == "${{ env.IMAGE_TAG }}") | .id')
-          echo "Package version ID: $VERSION_ID"
-          curl -i -X DELETE -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
-        
+          if [[ "${{ env.IMAGE_TAG }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ || "${{ env.IMAGE_TAG }}" == "latest" ]]; then
+            echo "Image with tag ${{ env.IMAGE_TAG }} must NOT be deleted."
+          else
+            echo "Robot test failed, deleting package from GHCR..."
+            REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
+            echo "Repo name: $REPO_NAME"
+            VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" | jq -r '.[] | select(.metadata.container.tags[] == "${{ env.IMAGE_TAG }}") | .id')
+            echo "Package version ID: $VERSION_ID"
+            curl -i -X DELETE -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
+          fi
+
       - name: 'Upload Artifact'
         if: always()
         uses: actions/upload-artifact@v4.6.0
@@ -210,12 +214,16 @@ jobs:
       - name: Delete package from GHCR after successful release
         if: steps.semantic.outputs.new_release_published
         run: |
-          echo "New release ${{ env.RELEASE_IMAGE_TAG }} was published, deleting image ${{ env.IMAGE_TAG }} from GHCR..."
-          REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
-          echo "Repo name: $REPO_NAME"
-          VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" | jq -r '.[] | select(.metadata.container.tags[] == "${{ env.IMAGE_TAG }}") | .id')
-          echo "Package version ID: $VERSION_ID"
-          curl -i -X DELETE -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
+          if [[ "${{ env.IMAGE_TAG }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ || "${{ env.IMAGE_TAG }}" == "latest" ]]; then
+            echo "Image with tag ${{ env.IMAGE_TAG }} must NOT be deleted."
+          else
+            echo "New release ${{ env.RELEASE_IMAGE_TAG }} was published, deleting image ${{ env.IMAGE_TAG }} from GHCR..."
+            REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
+            echo "Repo name: $REPO_NAME"
+            VERSION_ID=$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions" | jq -r '.[] | select(.metadata.container.tags[] == "${{ env.IMAGE_TAG }}") | .id')
+            echo "Package version ID: $VERSION_ID"
+            curl -i -X DELETE -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' -H "Accept: application/vnd.github.v3+json" "https://api.github.com/users/${{ github.repository_owner }}/packages/container/$REPO_NAME/versions/$VERSION_ID"
+          fi
         env: 
           RELEASE_IMAGE_TAG: v${{ steps.semantic.outputs.new_release_version }}
       
