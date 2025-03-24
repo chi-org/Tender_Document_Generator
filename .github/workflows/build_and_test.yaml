@@ -139,7 +139,7 @@ jobs:
       - name: Downcase REPO
         run: |
           git branch
-          ls
+          cat .github/workflows/build_and_test.yaml
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
       - name: Login to GitHub Container Registry
