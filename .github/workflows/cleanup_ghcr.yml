@@ -1,6 +1,7 @@
 name: "Scheduled Cleanup GHCR Images" 
 
 on: 
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * 1' # Every Monday at 00:00
 
