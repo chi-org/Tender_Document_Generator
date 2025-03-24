@@ -17,7 +17,7 @@ on:
         type: boolean
         default: false
       commit_id:
-        description: 'Commit Full ID (default: latest commit). e.g daae94a0f72a13f7092812fa42d684b2af827216'
+        description: 'Commit Full ID (default: latest commit). e.g daae94a0f72a13f7092812fa42d684b2af827xxx'
         type: string
 
       # image_name:
@@ -138,8 +138,6 @@ jobs:
 
       - name: Downcase REPO
         run: |
-          git branch
-          cat .github/workflows/build_and_test.yaml
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
       - name: Login to GitHub Container Registry
