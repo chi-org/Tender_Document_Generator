@@ -49,6 +49,7 @@ env:
   IMAGE_NAME: 'tender-docxtemplate-app'
   CONTAINER_NAME: 'tender-docxtemplate-app'
   CONTAINER_MAPPING_PORT: '8503:8503'
+  COMMIT_ID: ${{ inputs.commit_id || github.sha }}
 
 jobs:  
   build:
@@ -69,15 +70,11 @@ jobs:
           echo "is_image_tag_valid=true" >> $GITHUB_OUTPUT
         fi
 
-    - name: Checkout latest code
-      if: (github.event_name == 'push' || github.event_name == 'pull_request' || steps.validate_dispatch_inputs.outputs.is_image_tag_valid == 'true') && ${{ !inputs.commit_id }} 
-      uses: actions/checkout@v4
-
-    - name: Checkout code by commit id
-      if: (github.event_name == 'push' || github.event_name == 'pull_request' || steps.validate_dispatch_inputs.outputs.is_image_tag_valid == 'true') && ${{ inputs.commit_id }} 
+    - name: Checkout code
+      if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.validate_dispatch_inputs.outputs.is_image_tag_valid == 'true'
       uses: actions/checkout@v4
       with:
-        ref: ${{ inputs.commit_id }}
+        ref: ${{ env.COMMIT_ID }}
 
     - name: Build Docker image
       if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.validate_dispatch_inputs.outputs.is_image_tag_valid == 'true'
@@ -126,15 +123,10 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout latest code
-        if: ${{ !inputs.commit_id }}
-        uses: actions/checkout@v4
-
-      - name: Checkout code by commit id
-        if: ${{ inputs.commit_id }}
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.commit_id }}
+          ref: ${{ env.COMMIT_ID }}
 
       - name: Downcase REPO
         run: |
