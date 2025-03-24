@@ -28,6 +28,8 @@ jobs:
             IMAGE_ID=$(echo $IMAGE_INFO | jq -r '.id')
             DELETE_FLAG=true
 
+            echo $IMAGE_UPDATED_AT
+
             IMAGE_UPDATED_AT_EPOCH=$(date -d "${IMAGE_UPDATED_AT//Z/}" +"%s")
 
             CURRENT_EPOCH=$(date +"%s")
@@ -41,7 +43,7 @@ jobs:
             fi
 
             echo $TAGS | while read -r TAG; do
-              if [[ "$TAG" == "latest" || "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ || "$IMAGE_UPDATED_AT_WITHIN_1_WEEK" == "true" ]]; then
+              if [[ "$IMAGE_UPDATED_AT_WITHIN_1_WEEK" == "true" || "$TAG" == "latest" || "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
                 DELETE_FLAG=false;
                 break
               fi
