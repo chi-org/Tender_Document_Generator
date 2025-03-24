@@ -19,7 +19,7 @@ jobs:
         run: |
           REPO_NAME=$(echo ${{ env.REPO }} | cut -d'/' -f2)
           
-          curl -s -H "Authorization: Bearer $TOKEN" \
+          curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           -H "Accept: application/vnd.github.v3+json" \
           "https://ghcr.io/v2/${{ github.repository_owner }}/$REPO_NAME/tags/list" | jq .
           
