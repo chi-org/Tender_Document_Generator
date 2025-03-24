@@ -9,13 +9,17 @@ on:
       - main
   workflow_dispatch:
     inputs:
+      image_tag: 
+        description: 'Image tag (default: test-v<latest_run_number>). "latest" or "vxx.xx.xx" image cannot be rebuilt or deleted.'
+        type: string
       keep_image: 
         description: 'Keep image in GHCR even test fails'
         type: boolean
         default: false
-      image_tag: 
-        description: 'Image tag (default: test-v<latest_run_number>). "latest" or "vxx.xx.xx" image cannot be rebuilt or deleted.'
+      commit_id:
+        description: 'Commit ID (default: latest commit)'
         type: string
+
       # image_name:
       #   description: 'Image name'
       #   required: true
@@ -146,6 +150,7 @@ jobs:
         run: |
           echo "##[command]robot tests/"
           robot tests/
+          exit 1
 
       - name: Delete package from GHCR if test fails
         if: failure() && !inputs.keep_image 
