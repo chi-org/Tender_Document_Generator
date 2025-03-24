@@ -41,7 +41,7 @@ jobs:
             fi
 
             echo $TAGS | while read -r TAG; do
-              if [[ "$TAG" == "latest" || "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$) || "$IMAGE_UPDATED_AT_WITHIN_1_WEEK" == "true" ]]; then
+              if [[ "$TAG" == "latest" || "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ || "$IMAGE_UPDATED_AT_WITHIN_1_WEEK" == "true" ]]; then
                 DELETE_FLAG=false;
                 break
               fi
