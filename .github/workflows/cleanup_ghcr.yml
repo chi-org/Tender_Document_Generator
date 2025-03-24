@@ -1,0 +1,8 @@
+name: "Scheduled Cleanup GHCR Images" 
+
+on: 
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image Tag to delete'
+        
