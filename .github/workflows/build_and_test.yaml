@@ -177,7 +177,7 @@ jobs:
 
   release:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
-    # needs: test
+    needs: test
     runs-on: ubuntu-dind
     steps:
       - name: Checkout code
