@@ -37,6 +37,11 @@ jobs:
     outputs:
       is_latest_or_release_image: ${{ steps.check_existing_image.outputs.is_latest_or_release_image }}
     steps:
+    - name: Checkout code
+      if: github.event_name == 'push' || github.event_name == 'pull_request'
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.COMMIT_FULL_ID }}
     - name: Downcase REPO and shorten COMMIT ID
       run: |
         COMMIT_SHORT_ID=$(git rev-parse --short ${{ env.COMMIT_FULL_ID }})
@@ -64,12 +69,6 @@ jobs:
           echo "Image which has tag ${{ env.COMMIT_SHORT_ID }} is existed. The full tags are $FULL_TAGS. Skipping the rest of the build job..."
           echo "is_image_tag_by_commit_id_existed=true" >> $GITHUB_OUTPUT
         fi
-
-    - name: Checkout code
-      if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ env.COMMIT_FULL_ID }}
 
     - name: Build Docker image
       if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
