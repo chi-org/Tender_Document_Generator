@@ -140,7 +140,6 @@ jobs:
           
       - name: Pull image from GitHub Container Registry
         run: |
-          exit 1;
           docker pull ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
 
       - id: run_and_check_container_status
