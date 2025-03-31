@@ -38,7 +38,6 @@ jobs:
       is_latest_or_release_image: ${{ steps.check_existing_image.outputs.is_latest_or_release_image }}
     steps:
     - name: Checkout code
-      if: github.event_name == 'push' || github.event_name == 'pull_request'
       uses: actions/checkout@v4
       with:
         ref: ${{ env.COMMIT_FULL_ID }}
