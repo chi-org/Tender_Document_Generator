@@ -63,9 +63,11 @@ jobs:
         else
           FULL_TAGS=$(echo $EXISTED_IMAGE | jq -c '.tags')
           if [[ $FULL_TAGS == *"latest"* || $FULL_TAGS =~ v[0-9]+\.[0-9]+\.[0-9]+ ]]; then    
-            is_latest_or_release_image=true
+            echo "is_latest_or_release_image=true" >> $GITHUB_OUTPUT
+            echo "is_latest_or_release_image=true"
           else
-            is_latest_or_release_image=false
+            echo "is_latest_or_release_image=false" >> $GITHUB_OUTPUT
+            echo "is_latest_or_release_image=false"
           fi
 
           echo "Image which has tag ${{ env.COMMIT_SHORT_ID }} is existed. The full tags are $FULL_TAGS. Skipping the rest of the build job..."
@@ -138,7 +140,6 @@ jobs:
           
       - name: Pull image from GitHub Container Registry
         run: |
-          exit 1;
           docker pull ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
 
       - id: run_and_check_container_status
