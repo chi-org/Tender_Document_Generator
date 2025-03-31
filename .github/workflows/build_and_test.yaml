@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       commit_id:
-        description: 'Full commit ID to build (default: latest commit). e.g daae94a0f72a13f7092812fa42d684b2af827xxx'
+        description: 'Full commit ID to build (default: latest commit). e.g daae94a0f72a13f7092812fa42d684b2af827xxx. WARNING: release job will NOT run by this trigger'
         type: string
       run_test:
         description: 'Run test job'
@@ -46,6 +46,9 @@ jobs:
         COMMIT_SHORT_ID=$(git rev-parse --short ${{ env.COMMIT_FULL_ID }})
         echo "COMMIT_SHORT_ID=${COMMIT_SHORT_ID}" >>${GITHUB_ENV}
         echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+        echo "COMMIT_SHORT_ID=${{ env.COMMIT_SHORT_ID }}"
+        echo "REPO=${{ env.REPO }}"
+
     - name: Check existing image in GHCR
       id: check_existing_image
       run: |
@@ -123,6 +126,8 @@ jobs:
           COMMIT_SHORT_ID=$(git rev-parse --short ${{ env.COMMIT_FULL_ID }})
           echo "COMMIT_SHORT_ID=${COMMIT_SHORT_ID}" >>${GITHUB_ENV}
           echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+          echo "COMMIT_SHORT_ID=${{ env.COMMIT_SHORT_ID }}"
+          echo "REPO=${{ env.REPO }}"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -200,6 +205,8 @@ jobs:
             COMMIT_SHORT_ID=$(git rev-parse --short ${{ env.COMMIT_FULL_ID }})
             echo "COMMIT_SHORT_ID=${COMMIT_SHORT_ID}" >>${GITHUB_ENV}
             echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+            echo "COMMIT_SHORT_ID=${{ env.COMMIT_SHORT_ID }}"
+            echo "REPO=${{ env.REPO }}"
 
       - name: Login to GitHub Container Registry
         if: steps.semantic.outputs.new_release_published == 'true'
