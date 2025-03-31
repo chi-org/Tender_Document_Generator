@@ -13,7 +13,7 @@ on:
         description: 'Full commit ID to build (default: latest commit). e.g daae94a0f72a13f7092812fa42d684b2af827xxx. WARNING: release job will NOT run by this trigger'
         type: string
       run_test:
-        description: 'Run test job'
+        description: 'Run test'
         default: true
         type: boolean
       keep_image: 
@@ -138,6 +138,7 @@ jobs:
           
       - name: Pull image from GitHub Container Registry
         run: |
+          exit 1;
           docker pull ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
 
       - id: run_and_check_container_status
