@@ -12,14 +12,10 @@ on:
       commit_id:
         description: 'Full commit ID to build (default: latest commit). e.g daae94a0f72a13f7092812fa42d684b2af827xxx. WARNING: release job will NOT run by this trigger'
         type: string
-      run_test:
-        description: 'Run test'
-        default: true
-        type: boolean
-      keep_image: 
-        description: 'Keep image in GHCR even test fails'
-        type: boolean
-        default: false
+      wait_seconds:
+        description: 'Wait seconds before cleanup (max 3600)'
+        type: number
+        default: 600
       
 env:
   IMAGE_TEST_TAG: ${{ format('test-v{0}', github.run_number) }}
@@ -27,6 +23,7 @@ env:
   CONTAINER_NAME: 'tender-docxtemplate-app'
   CONTAINER_MAPPING_PORT: '8503:8503'
   COMMIT_FULL_ID: ${{ inputs.commit_id || github.sha }}
+  WAIT_SECONDS: ${{ inputs.wait_seconds || 600 }}
 
 jobs:  
   build:
@@ -208,10 +205,6 @@ jobs:
         docker push ghcr.io/${{ env.REPO }}:${{ env.COMMIT_SHORT_ID }}
 
   test: 
-    if: |
-      github.event_name == 'push'|| 
-      github.event_name == 'pull_request' || 
-      ( github.event_name == 'workflow_dispatch' && inputs.run_test ) 
     needs: build
     runs-on: robot-dind
     permissions:
@@ -254,9 +247,21 @@ jobs:
         run: |
           echo "##[command]robot tests/"
           robot tests/
+      
+      - name: Wait before cleanup
+        if: github.event_name == 'workflow_dispatch' || failure()
+        continue-on-error: true
+        run: |
+          if [ ${{ env.WAIT_SECONDS }} -gt 3600 ]; then
+            echo "Wait seconds is too long, set to 3600"
+            echo "WAIT_SECONDS=3600" >> $GITHUB_ENV
+          fi
+          echo "Wait seconds: ${{ env.WAIT_SECONDS }}"
+          echo "Waiting before cleanup..."
+          sleep ${{ env.WAIT_SECONDS }}
 
       - name: Delete package from GHCR if test fails
-        if: failure() && !inputs.keep_image 
+        if: github.event_name == 'workflow_dispatch' || failure()
         run: |
           if [[ "${{ needs.build.outputs.is_latest_or_release_image }}" == "true" ]]; then
             echo "Image with tag ${{ env.COMMIT_SHORT_ID }} must NOT be deleted as it is release or latest image."
@@ -270,7 +275,7 @@ jobs:
           fi
 
       - name: 'Upload Artifact'
-        if: always()
+        if: always() && !cancelled()
         uses: actions/upload-artifact@v4.6.0
         with:
           name: robot-test-result-#${{ github.run_number }}
