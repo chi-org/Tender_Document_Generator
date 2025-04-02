@@ -11,7 +11,7 @@ flowchart TD
         G["Run App"]
         H["Login to GHCR"]
         I["Push Test Image to GHCR"]
-        n3["Tags contain latest or release?"]
+        n3{"Tags contain latest or release?"}
         n4["is_latest_or_release_image=true"]
   end
  subgraph s2["<b>TEST</b>"]
@@ -20,9 +20,9 @@ flowchart TD
         L["Login to GHCR"]
         M["Pull Test Image from GHCR"]
         N["Run App"]
-        O["Robot Tests Succeed"]
+        O{"Robot Tests Succeed"}
         R["Upload Artifacts Test Result"]
-        n5["is_latest_or_release_image?"]
+        n5{"is_latest_or_release_image?"}
         n6["Delete image in GHCR"]
   end
  subgraph s3["<b>RELEASE</b>"]
@@ -76,9 +76,5 @@ flowchart TD
     AA -- Yes --> n8
     n8 --> n9
     n9 --> n10
-
-    n3@{ shape: diam}
-    O@{ shape: diam}
-    n5@{ shape: diam}
 ```
 
