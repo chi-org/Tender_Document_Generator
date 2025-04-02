@@ -81,6 +81,24 @@ jobs:
         | jq '.jobs[] | select(.name=="build") | .id' > job_id.txt
         echo "job_id=$(cat job_id.txt)" >> $GITHUB_OUTPUT
 
+    - name: Determine Commit ID and Comitter Email
+      id: determine_commit_id
+      run: |
+        if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+          COMMIT_ID=${{ github.event.inputs.commit_id }}
+          COMMIT_AUTHOR_EMAIL=$(git show -s --format='%ae' $COMMIT_ID)
+          COMMIT_AUTHOR_NAME=$(git show -s --format='%aN' $COMMIT_ID)
+        else
+          COMMIT_ID=${{ github.event.head_commit.id }}
+          COMMIT_AUTHOR_EMAIL=${{ github.event.head_commit.author.email }}
+          COMMIT_AUTHOR_NAME=${{ github.event.head_commit.author.name }}
+        fi
+
+        echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_ENV
+        echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_ENV
+        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_ENV
+        
+
     - name: Scan Dockerfile 
       id: scan_dockerfile
       run: |
@@ -111,10 +129,10 @@ jobs:
         password: ${{secrets.MAIL_PASSWORD}}
         subject: "[ALERT] Vulnerabilities Found in Dockerfile"
         body: |
-          Hello ${{ github.event.head_commit.author.name }},
+          Hello ${{ env.COMMIT_AUTHOR_NAME }},
 
           Detected vulnerabilities for commit:
-          ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.head_commit.id }}
+          ${{ github.server_url }}/${{ github.repository }}/commit/${{ env.COMMIT_ID }}
 
           View the full report here:
           ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.get_job_id.outputs.job_id }}
@@ -123,7 +141,7 @@ jobs:
 
           Best,
           SRE Team
-        to: ${{ github.event.head_commit.author.email }}
+        to: ${{ env.COMMIT_AUTHOR_EMAIL }}
         from: kien.kim@svtech.com.vn
 
     - name: Show results for Dockerfile scanning
