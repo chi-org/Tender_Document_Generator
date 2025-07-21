@@ -176,17 +176,15 @@ jobs:
     - name: Scan Docker image
       id: scan_docker_image
       run: |
-        # echo "🔍 Checking Trivy server availability..."
+        echo "🔍 Checking Trivy server availability..."
 
-        # if curl -s --fail http://10.98.15.6:7777/healthz; then
-        #   echo "✅ Trivy server is UP"
-        #   trivy image --server http://10.98.15.6:7777 --timeout 8m --severity HIGH,CRITICAL --format table --output image_scanning_result.txt ${{ env.IMAGE_NAME }}:latest
-        # else
-        #   echo "⚠️ Trivy server is DOWN. Falling back to local scan"
-        #   trivy image --timeout 8m --severity HIGH,CRITICAL --format table --output image_scanning_result.txt ${{ env.IMAGE_NAME }}:latest
-        # fi
-        
-        trivy image --server http://10.98.15.6:7777 --severity HIGH,CRITICAL --format table --output image_scanning_result.txt ${{ env.IMAGE_NAME }}:latest
+        if curl -s --fail http://10.98.7.14:7777/healthz; then
+          echo "✅ Trivy server is UP"
+          trivy image --server http://10.98.7.14:7777 --timeout 8m --severity HIGH,CRITICAL --format table --output image_scanning_result.txt ${{ env.IMAGE_NAME }}:latest
+        else
+          echo "⚠️ Trivy server is DOWN. Falling back to local scan"
+          trivy image --timeout 8m --severity HIGH,CRITICAL --format table --output image_scanning_result.txt ${{ env.IMAGE_NAME }}:latest
+        fi
 
         if grep -q -E 'HIGH|CRITICAL' image_scanning_result.txt; then
           echo "detected_vulns=true" >> $GITHUB_OUTPUT
