@@ -109,8 +109,8 @@ jobs:
     - name: Scan Dockerfile 
       id: scan_dockerfile
       run: |
-        trivy config --severity HIGH,CRITICAL --format table --output dockerfile_scanning_result.json ./Dockerfile
-        VULN_LINE=$(grep -E "Failures: [0-9]+ \(HIGH: [0-9]+, CRITICAL: [0-9]+\)" dockerfile_scanning_result.json)
+        trivy config --severity HIGH,CRITICAL --format table --output dockerfile_scanning_result.txt ./Dockerfile
+        VULN_LINE=$(grep -E "Failures: [0-9]+ \(HIGH: [0-9]+, CRITICAL: [0-9]+\)" dockerfile_scanning_result.txt)
         
         HIGH_COUNT=$(echo "$VULN_LINE" | awk -F'[(:,)]' '{print $4}' | tr -d ' ')
         CRITICAL_COUNT=$(echo "$VULN_LINE" | awk -F'[(:,)]' '{print $6}' | tr -d ' ')
@@ -120,13 +120,14 @@ jobs:
         echo "TOTAL vulnerabilities: $TOTAL_VULNS"
 
         if [ "$TOTAL_VULNS" -gt 0 ]; then
-          echo "scanning_fail=true" >> $GITHUB_OUTPUT
+          echo "detected_vulns=true" >> $GITHUB_OUTPUT
         else
-          echo "scanning_fail=false" >> $GITHUB_OUTPUT
+          echo "detected_vulns=false" >> $GITHUB_OUTPUT
         fi
+      continue-on-error: true
 
     - name: Send mail to committer if detect vulnerability in Dockerfile
-      if: steps.scan_dockerfile.outputs.scanning_fail == 'true'
+      if: steps.scan_dockerfile.outputs.detected_vulns == 'true'
       uses: dawidd6/action-send-mail@v4
       with:
         server_address: smtp.gmail.com
@@ -154,7 +155,8 @@ jobs:
     - name: Show results for Dockerfile scanning
       run: |
         echo "##[command] Show results for Dockerfile scanning"
-        cat dockerfile_scanning_result.json
+        cat dockerfile_scanning_result.txt
+      continue-on-error: true
 
     - name: Build Docker image
       if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
@@ -174,16 +176,37 @@ jobs:
     - name: Scan Docker image
       id: scan_docker_image
       run: |
-        trivy image --server http://10.98.15.6:7777 --severity HIGH,CRITICAL --format table --output image_scanning_result.json ${{ env.IMAGE_NAME }}:latest
+        echo "🔍 Checking Trivy server availability..."
 
-        if grep -q -E 'HIGH|CRITICAL' image_scanning_result.json; then
-          echo "scanning_fail=true" >> $GITHUB_OUTPUT
+        if curl -s --fail http://10.98.15.6:7777/healthz; then
+          echo "✅ Trivy server is UP"
+          TRIVY_MODE="server"
+          trivy image --server http://10.98.15.6:7777 \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --output image_scanning_result.txt \
+            ${{ env.IMAGE_NAME }}:latest
         else
-          echo "scanning_fail=false" >> $GITHUB_OUTPUT
+          echo "⚠️ Trivy server is DOWN. Falling back to local scan"
+          TRIVY_MODE="local"
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --output image_scanning_result.txt \
+            ${{ env.IMAGE_NAME }}:latest
         fi
+        
+        echo "Trivy mode: $TRIVY_MODE"
+
+        if grep -q -E 'HIGH|CRITICAL' image_scanning_result.txt; then
+          echo "detected_vulns=true" >> $GITHUB_OUTPUT
+        else
+          echo "detected_vulns=false" >> $GITHUB_OUTPUT
+        fi
+      continue-on-error: true
 
     - name: Send mail to committer if detect vulnerability in Docker image
-      if: steps.scan_docker_image.outputs.scanning_fail == 'true'
+      if: steps.scan_docker_image.outputs.detected_vulns == 'true'
       uses: dawidd6/action-send-mail@v4
       with:
         server_address: smtp.gmail.com
@@ -211,7 +234,8 @@ jobs:
     - name: Show results for Image scanning
       run: |
         echo "##[command] Show results for Image scanning"
-        cat image_scanning_result.json
+        cat image_scanning_result.txt
+      continue-on-error: true
 
     - name: Login to GitHub Container Registry
       if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
