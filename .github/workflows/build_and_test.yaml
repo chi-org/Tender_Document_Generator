@@ -180,23 +180,11 @@ jobs:
 
         if curl -s --fail http://10.98.15.6:7777/healthz; then
           echo "✅ Trivy server is UP"
-          TRIVY_MODE="server"
-          trivy image --server http://10.98.15.6:7777 \
-            --severity HIGH,CRITICAL \
-            --format table \
-            --output image_scanning_result.txt \
-            ${{ env.IMAGE_NAME }}:latest
+          trivy image --server http://10.98.15.6:7777 --timeout 8m --severity HIGH,CRITICAL --format table --output image_scanning_result.txt ${{ env.IMAGE_NAME }}:latest
         else
           echo "⚠️ Trivy server is DOWN. Falling back to local scan"
-          TRIVY_MODE="local"
-          trivy image \
-            --severity HIGH,CRITICAL \
-            --format table \
-            --output image_scanning_result.txt \
-            ${{ env.IMAGE_NAME }}:latest
+          trivy image --timeout 8m --severity HIGH,CRITICAL --format table --output image_scanning_result.txt ${{ env.IMAGE_NAME }}:latest
         fi
-        
-        echo "Trivy mode: $TRIVY_MODE"
 
         if grep -q -E 'HIGH|CRITICAL' image_scanning_result.txt; then
           echo "detected_vulns=true" >> $GITHUB_OUTPUT
@@ -341,9 +329,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
+        
       - name: Semantic Release
         uses: cycjimmy/semantic-release-action@v4
         id: semantic
