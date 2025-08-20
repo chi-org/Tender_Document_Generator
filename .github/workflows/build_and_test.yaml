@@ -101,9 +101,9 @@ jobs:
           COMMIT_AUTHOR_NAME=${{ github.event.head_commit.author.name }}
         fi
 
-        echo "COMMIT_ID=${COMMIT_ID}" >> $OUTPUT
-        echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $OUTPUT
-        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $OUTPUT
+        echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_OUTPUT
+        echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_OUTPUT
+        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT
         
     - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
       uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
