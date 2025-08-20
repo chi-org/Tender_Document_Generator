@@ -105,50 +105,17 @@ jobs:
         echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_OUTPUT
         echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_OUTPUT
         echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_OUTPUT
-
-    - name: Scan Dockerfile 
-      id: scan_dockerfile
-      run: |
-        echo "Scanning Dockerfile..."
-        # Scan Dockerfile, export SARIF
-        trivy config --severity HIGH,CRITICAL --format sarif --output trivy-report.sarif ./Dockerfile
-
-        # Generate text summary for log
-        jq -r '.runs[].results[] | "\(.ruleId): \(.level)"' trivy-report.sarif > dockerfile_scanning_result.txt
-
-        # Count HIGH + CRITICAL
-        HIGH_COUNT=$(jq '[.runs[].results[] | select(.level=="high")] | length' trivy-report.sarif)
-        CRITICAL_COUNT=$(jq '[.runs[].results[] | select(.level=="critical")] | length' trivy-report.sarif)
-        TOTAL_VULNS=$((HIGH_COUNT + CRITICAL_COUNT))
-
-        echo "HIGH vulnerabilities: $HIGH_COUNT"
-        echo "CRITICAL vulnerabilities: $CRITICAL_COUNT"
-        echo "TOTAL vulnerabilities: $TOTAL_VULNS"
-
-        # Set output to trigger mail
-        if [ "$TOTAL_VULNS" -gt 0 ]; then
-          echo "detected_vulns=true" >> $GITHUB_OUTPUT
-        else
-          echo "detected_vulns=false" >> $GITHUB_OUTPUT
-        fi
-      continue-on-error: true
   
-    - name: Debug
-      run: |
-        cat trivy-report.sarif
-        cat dockerfile_scanning_result.txt
-      continue-on-error: true
-  
-  #   - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
-  #     uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
-  #     with:
-  #       dockerfile_path: './Dockerfile'
-  #       commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
-  #       mail_username: ${{ vars.MAIL_USERNAME }}
-  #       mail_password: ${{ secrets.MAIL_PASSWORD }}
-  #       commit_author_email: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }}
-  #       commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
-  #       job_id: ${{ steps.get_job_id.outputs.job_id }}
+    - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
+      uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
+      with:
+        dockerfile_path: './Dockerfile'
+        commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
+        mail_username: ${{ vars.MAIL_USERNAME }}
+        mail_password: ${{ secrets.MAIL_PASSWORD }}
+        commit_author_email: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }}
+        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
+        job_id: ${{ steps.get_job_id.outputs.job_id }}
 
   #   - name: Build Docker image
   #     if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
