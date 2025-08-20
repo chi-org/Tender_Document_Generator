@@ -89,7 +89,7 @@ jobs:
         echo "job_id=$(cat job_id.txt)" >> $GITHUB_OUTPUT
 
     - name: Determine Commit ID and Comitter Email
-      id: determine_commit_id
+      id: determine_commit_id_and_email_author
       run: |
         if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
           COMMIT_ID=${{ github.event.inputs.commit_id }}
@@ -101,62 +101,20 @@ jobs:
           COMMIT_AUTHOR_NAME=${{ github.event.head_commit.author.name }}
         fi
 
-        echo "COMMIT_ID=${COMMIT_ID}" >> $GITHUB_ENV
-        echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $GITHUB_ENV
-        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $GITHUB_ENV
+        echo "COMMIT_ID=${COMMIT_ID}" >> $OUTPUT
+        echo "COMMIT_AUTHOR_EMAIL=${COMMIT_AUTHOR_EMAIL}" >> $OUTPUT
+        echo "COMMIT_AUTHOR_NAME=${COMMIT_AUTHOR_NAME}" >> $OUTPUT
         
-
-    - name: Scan Dockerfile 
-      id: scan_dockerfile
-      run: |
-        trivy config --severity HIGH,CRITICAL --format table --output dockerfile_scanning_result.txt ./Dockerfile
-        VULN_LINE=$(grep -E "Failures: [0-9]+ \(HIGH: [0-9]+, CRITICAL: [0-9]+\)" dockerfile_scanning_result.txt)
-        
-        HIGH_COUNT=$(echo "$VULN_LINE" | awk -F'[(:,)]' '{print $4}' | tr -d ' ')
-        CRITICAL_COUNT=$(echo "$VULN_LINE" | awk -F'[(:,)]' '{print $6}' | tr -d ' ')
-        TOTAL_VULNS=$((HIGH_COUNT + CRITICAL_COUNT))
-        echo "HIGH vulnerabilities: $HIGH_COUNT"
-        echo "CRITICAL vulnerabilities: $CRITICAL_COUNT"
-        echo "TOTAL vulnerabilities: $TOTAL_VULNS"
-
-        if [ "$TOTAL_VULNS" -gt 0 ]; then
-          echo "detected_vulns=true" >> $GITHUB_OUTPUT
-        else
-          echo "detected_vulns=false" >> $GITHUB_OUTPUT
-        fi
-      continue-on-error: true
-
-    - name: Send mail to committer if detect vulnerability in Dockerfile
-      if: steps.scan_dockerfile.outputs.detected_vulns == 'true'
-      uses: dawidd6/action-send-mail@v4
+    - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
+      uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
       with:
-        server_address: smtp.gmail.com
-        server_port: 465
-        secure: true
-        username: ${{vars.MAIL_USERNAME}}
-        password: ${{secrets.MAIL_PASSWORD}}
-        subject: "[ALERT] Vulnerabilities Found in Dockerfile"
-        body: |
-          Hello ${{ env.COMMIT_AUTHOR_NAME }},
-
-          Detected vulnerabilities for commit:
-          ${{ github.server_url }}/${{ github.repository }}/commit/${{ env.COMMIT_ID }}
-
-          View the full report here:
-          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.get_job_id.outputs.job_id }}
-          
-          Please review the details and take appropriate action.
-
-          Best,
-          SRE Team
-        to: ${{ env.COMMIT_AUTHOR_EMAIL }}
-        from: kien.kim@svtech.com.vn
-
-    - name: Show results for Dockerfile scanning
-      run: |
-        echo "##[command] Show results for Dockerfile scanning"
-        cat dockerfile_scanning_result.txt
-      continue-on-error: true
+        dockerfile_path: './Dockerfile'
+        commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
+        mail_username: ${{ vars.MAIL_USERNAME }}
+        mail_password: ${{ secrets.MAIL_PASSWORD }}
+        commit_author_email: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }}
+        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
+        job_id: ${{ steps.get_job_id.outputs.job_id }}
 
     - name: Build Docker image
       if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
@@ -164,6 +122,18 @@ jobs:
         echo ${{ steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed }}
         docker build --build-arg git_token=${{ secrets.GITHUB_TOKEN }} --build-arg CACHEBUST=$(date +%s) --build-arg BRANCH=main --build-arg OWNER=${{ github.repository_owner }} -t ${{ env.IMAGE_NAME }} .
         
+    - name: Scan Docker image using Trivy and send mail if vulnerabilities detected
+      uses: svtechnmaa/.github/actions/run_trivy_scan_image@main
+      with:
+        trivy_server: 'http://10.98.7.14:7777'
+        image_name: ${{ env.IMAGE_NAME }}
+        commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
+        mail_username: ${{ vars.MAIL_USERNAME }}
+        mail_password: ${{ secrets.MAIL_PASSWORD }}
+        commit_author_email: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_EMAIL }}
+        commit_author_name: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_AUTHOR_NAME }}
+        job_id: ${{ steps.get_job_id.outputs.job_id }}
+    
     - id: run_and_check_container_status
       if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
       name: Run Tender app
@@ -172,58 +142,6 @@ jobs:
         imageName: '${{ env.IMAGE_NAME }}'
         containerName: '${{ env.CONTAINER_NAME }}'
         containerMappingPort: '${{ env.CONTAINER_MAPPING_PORT }}'
-
-    - name: Scan Docker image
-      id: scan_docker_image
-      run: |
-        echo "🔍 Checking Trivy server availability..."
-
-        if curl -s --fail http://10.98.7.14:7777/healthz; then
-          echo "✅ Trivy server is UP"
-          trivy image --server http://10.98.7.14:7777 --timeout 8m --severity HIGH,CRITICAL --format table --output image_scanning_result.txt ${{ env.IMAGE_NAME }}:latest
-        else
-          echo "⚠️ Trivy server is DOWN. Falling back to local scan"
-          trivy image --timeout 8m --severity HIGH,CRITICAL --format table --output image_scanning_result.txt ${{ env.IMAGE_NAME }}:latest
-        fi
-
-        if grep -q -E 'HIGH|CRITICAL' image_scanning_result.txt; then
-          echo "detected_vulns=true" >> $GITHUB_OUTPUT
-        else
-          echo "detected_vulns=false" >> $GITHUB_OUTPUT
-        fi
-      continue-on-error: true
-
-    - name: Send mail to committer if detect vulnerability in Docker image
-      if: steps.scan_docker_image.outputs.detected_vulns == 'true'
-      uses: dawidd6/action-send-mail@v4
-      with:
-        server_address: smtp.gmail.com
-        server_port: 465
-        secure: true
-        username: ${{vars.MAIL_USERNAME}}
-        password: ${{secrets.MAIL_PASSWORD}}
-        subject: "[ALERT] Vulnerabilities Found in Docker Image"
-        body: |
-          Hello ${{ github.event.head_commit.author.name }},
-
-          Detected vulnerabilities for commit:
-          ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.event.head_commit.id }}
-
-          View the full report here:
-          ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.get_job_id.outputs.job_id }}
-          
-          Please review the details and take appropriate action.
-
-          Best,
-          SRE Team
-        to: ${{ github.event.head_commit.author.email }}
-        from: kien.kim@svtech.com.vn
-
-    - name: Show results for Image scanning
-      run: |
-        echo "##[command] Show results for Image scanning"
-        cat image_scanning_result.txt
-      continue-on-error: true
 
     - name: Login to GitHub Container Registry
       if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
