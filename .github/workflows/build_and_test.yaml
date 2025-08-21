@@ -136,6 +136,8 @@ jobs:
         -----"
         ' trivy-report.sarif
 
+        echo "${{ github.server_url }}/${{ github.repository }}/security/code-scanning"
+
     # - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
     #   uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
     #   with:
