@@ -138,6 +138,14 @@ jobs:
 
     #     echo "${{ github.server_url }}/${{ github.repository }}/security/code-scanning"
 
+    - name: Login to GitHub Container Registry
+      if: github.event_name == 'push' || github.event_name == 'pull_request' || steps.check_existing_image.outputs.is_image_tag_by_commit_id_existed == 'false'
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: '${{ github.repository_owner }}'
+        password: '${{ secrets.GITHUB_TOKEN }}'
+
     - name: Scan Dockerfile using Trivy and send mail if vulnerabilities detected
       uses: svtechnmaa/.github/actions/run_trivy_scan_dockerfile@main
       with:
