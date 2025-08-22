@@ -159,7 +159,7 @@ jobs:
       uses: svtechnmaa/.github/actions/run_trivy_scan_image@main
       with:
         trivy_server: 'http://10.98.7.14:7777'
-        image_name: ghcr.io/chi-org/tender_document_generator
+        image_name: ${{ env.IMAGE_NAME }}
         commit_id: ${{ steps.determine_commit_id_and_email_author.outputs.COMMIT_ID }}
         mail_username: ${{ vars.MAIL_USERNAME }}
         mail_password: ${{ secrets.MAIL_PASSWORD }}
